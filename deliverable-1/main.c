@@ -10,22 +10,22 @@ int main(void)
     double time;
     int maxSteps;
 
-    print("Enter z0 (m): ");
+    printf("Enter z0 (m): ");
     scanf("%lf", &altituide);
 
-    print("Enter velocity (m/s): ");
+    printf("Enter velocity (m/s): ");
     scanf("%lf", &velocity);
 
-    print("Enter initial fuel (steps)");
+    printf("Enter initial fuel (steps)");
     scanf("%d", &Fuelsteps);
 
-    print("Enter engine accel a_thrust(m/s^2)");
+    printf("Enter engine accel a_thrust(m/s^2)");
     scanf("%lf", &thrust);
 
-    print("Enter dt (s): ");
+    printf("Enter dt (s): ");
     scanf("%lf", &time);
 
-    print("Enter max steps");
+    printf("Enter max steps");
     scanf("%d", &maxSteps);
     double altituideArr[maxSteps];
 
