@@ -9,7 +9,7 @@ void update_sensor_sample(sensor_sample_s *sensor)
         sensor->acceleration = THRUST - G;
         sensor->fuel--;
     }
-    sensor->timestamp += .1;
+    sensor->timestamp += TIME;
 }
 
 void update_telemetry_state(const sensor_sample_s *sensor, telemetry_packet_s *telemetry)
