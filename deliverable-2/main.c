@@ -61,7 +61,7 @@ void run_rocket_state(const telemetry_packet_s *telemetry)
 int main(void)
 {
     sensor_sample_s sensor = {0};
-    sensor.fuel =   FUELI;
+    sensor.fuel = FUELI;
     telemetry_packet_s telemetry = {0};
     telemetry.velocity = VI;
     telemetry.altitude = ALTI;
