@@ -1,13 +1,12 @@
 #include <stdint.h>
 
-// TODO: Define macros for initial altitude, velocity, fuel, thrust, and time step.
 
 #define ALTI 0.0
 #define VI 0.0
-#define FUELI 50 // Number of steps the engine can run.
-#define THRUST 15.0 // Upward acceleration from the engine.
-#define TIME 0.1 // Seconds that pass during each loop.
-#define G 9.81 // Downward acceleration from gravity.
+#define FUELI 50
+#define THRUST 15.0
+#define TIME 0.1
+#define G 9.81
 typedef struct
 {
     double acceleration;
