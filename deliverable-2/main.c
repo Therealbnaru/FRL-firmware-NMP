@@ -75,6 +75,7 @@ int main(void)
         printf("Altitude: %.1f m\n", telemetry.altitude);
         printf("Velocity: %.1f m/s\n", telemetry.velocity);
         printf("Fuel: %d\n\n", sensor.fuel);
+        printf("State: %d\n", state);
     }
 
 }
