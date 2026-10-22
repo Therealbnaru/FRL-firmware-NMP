@@ -8,7 +8,7 @@ void print_telemetry(void)
 
     printf("Print task ran\n");
 
-    while (popt(&telemetry)) // Prints every packet currently in the telemetry buffer.
+    while (popt(&telemetry))
     {
         printf("Time: %.2f s\n", telemetry.sensor.timestamp);
         printf("Altitude: %.1f m\n", telemetry.altitude);

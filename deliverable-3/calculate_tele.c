@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "calc_tele.h"
 
-static telemetry_packet_s telemetry = {{0}, VI, ALTI}; // Keeps the latest motion state.
+static telemetry_packet_s telemetry = {{0}, VI, ALTI};
 
 void update_telemetry_state(const sensor_sample_s *sensor, telemetry_packet_s *telemetry)
 {
@@ -16,10 +16,10 @@ void calculate_telemetry(void)
 {
     sensor_sample_s sensor;
 
-    while (pop(&sensor)) // Processes every available sensor sample.
+    while (pop(&sensor))
     {
         update_telemetry_state(&sensor, &telemetry);
-        pusht(&telemetry); // Saves each result for the print task.
+        pusht(&telemetry);
     }
 
     printf("Calculate task ran\n");
@@ -27,5 +27,5 @@ void calculate_telemetry(void)
 
 const telemetry_packet_s *get_telemetry(void)
 {
-    return &telemetry; // Lets the state task read the latest result without consuming the print buffer.
+    return &telemetry;
 }

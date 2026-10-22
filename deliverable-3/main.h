@@ -35,11 +35,11 @@ typedef enum
 
 void run_scheduler(void);
 
-// Sensor ring buffer: discards the oldest sample when full.
+//sensro buff
 void push(const sensor_sample_s *sensor);
 int pop(sensor_sample_s *sensor);
 
-// Telemetry ring buffer: rejects new packets when full.
+// Tele buff
 void pusht(const telemetry_packet_s *telemetry);
 int popt(telemetry_packet_s *telemetry);
 

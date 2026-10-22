@@ -33,9 +33,9 @@ int main(void)
 {
     while (get_state() != FLIGHT_LANDED)
     {
-        run_scheduler(); // Tasks run only when their intervals have elapsed.
+        run_scheduler();
     }
 
-    print_telemetry(); // Prints any packets still waiting after landing.
+    print_telemetry();
     return 0;
 }
