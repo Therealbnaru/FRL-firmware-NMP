@@ -47,7 +47,7 @@ void run_state(void)
 {
     const telemetry_packet_s *telemetry = get_telemetry();
 
-    if (telemetry->sensor.timestamp > 0) // Waits until a sensor sample has been processed.
+    if (telemetry->sensor.timestamp > 0)
     {
         run_rocket_state(telemetry);
     }
@@ -57,5 +57,5 @@ void run_state(void)
 
 rocket_state get_state(void)
 {
-    return state; // Lets main check whether the rocket has landed.
+    return state;
 }

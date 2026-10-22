@@ -5,9 +5,11 @@ static telemetry_packet_s telemetry = {{0}, VI, ALTI}; // Keeps the latest motio
 
 void update_telemetry_state(const sensor_sample_s *sensor, telemetry_packet_s *telemetry)
 {
+    double t = sensor->timestamp - telemetry->sensor.timestamp;
+    telemetry->velocity += sensor->acceleration * t;
+    telemetry->altitude += telemetry->velocity * t;
     telemetry->sensor = *sensor;
-    telemetry->velocity += sensor->acceleration * TIME;
-    telemetry->altitude += telemetry->velocity * TIME;
+
 }
 
 void calculate_telemetry(void)
