@@ -1,3 +1,6 @@
+#ifndef FRL_FIRMWARE_NMP_MAIN_H
+#define FRL_FIRMWARE_NMP_MAIN_H
+
 #include <stdint.h>
 #include "flight_config.h"
 
@@ -21,27 +24,6 @@ typedef struct
     double velocity;
     double altitude;
 } telemetry_packet_s;
-//schedular stuff
-void run_scheduler(void);
-void sample_sensor(void);
-void calculate_telemetry(void);
-void print_telemetry(void);
-void run_state(void);
-
-//Buffer Sensor
-void push(const sensor_sample_s *sensor);
-int pop(sensor_sample_s *sensor);
-
-//Buffer Tele
-void pusht(const telemetry_packet_s *telemetry);
-int popt(telemetry_packet_s *telemetry);
-
-    
-
-
-void update_sensor_sample(sensor_sample_s *sensor);
-void update_telemetry_state(const sensor_sample_s *sensor, telemetry_packet_s *telemetry);
-void run_rocket_state(const telemetry_packet_s *telemetry);
 
 typedef enum
 {
@@ -50,3 +32,15 @@ typedef enum
     FLIGHT_DESCENT,
     FLIGHT_LANDED
 } rocket_state;
+
+void run_scheduler(void);
+
+// Sensor ring buffer: discards the oldest sample when full.
+void push(const sensor_sample_s *sensor);
+int pop(sensor_sample_s *sensor);
+
+// Telemetry ring buffer: rejects new packets when full.
+void pusht(const telemetry_packet_s *telemetry);
+int popt(telemetry_packet_s *telemetry);
+
+#endif
