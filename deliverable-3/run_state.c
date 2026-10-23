@@ -52,7 +52,7 @@ void run_state(void)
         run_rocket_state(telemetry);
     }
 
-    printf("State: %d\n", state);
+    //printf("State: %d\n", state);
 }
 
 rocket_state get_state(void)

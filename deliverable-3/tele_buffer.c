@@ -4,8 +4,8 @@
 #include "main.h"
 
 static telemetry_packet_s buffer[TELEMETRY_BUFFER];
-static int head = 0;
-static int tail = 0;
+static int head = 0;//changing
+static int tail = 0;//old
 static int count = 0;
 
 void pusht(const telemetry_packet_s *telemetry)

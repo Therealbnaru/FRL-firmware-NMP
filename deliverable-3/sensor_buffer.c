@@ -5,8 +5,8 @@
 #include "main.h"
 
 static sensor_sample_s buffer[SENSOR_BUFFER];
-static int head = 0;
-static int tail = 0;
+static int head = 0;//changing
+static int tail = 0;//old
 static int count = 0;
 
 void push(const sensor_sample_s *sensor)

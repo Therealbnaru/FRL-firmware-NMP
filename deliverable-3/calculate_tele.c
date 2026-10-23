@@ -22,7 +22,7 @@ void calculate_telemetry(void)
         pusht(&telemetry);
     }
 
-    printf("Calculate task ran\n");
+    //printf("Calculate task ran\n");
 }
 
 const telemetry_packet_s *get_telemetry(void)

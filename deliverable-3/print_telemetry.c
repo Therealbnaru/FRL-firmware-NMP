@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "main.h"
 #include "print_telemetry.h"
+#include "timer.h"
 
 void print_telemetry(void)
 {
@@ -10,6 +11,7 @@ void print_telemetry(void)
 
     while (popt(&telemetry))
     {
+        printf("Elapsed time: %.2f s\n", get_ms() / 1000.0);
         printf("Time: %.2f s\n", telemetry.sensor.timestamp);
         printf("Altitude: %.1f m\n", telemetry.altitude);
         printf("Velocity: %.1f m/s\n", telemetry.velocity);
