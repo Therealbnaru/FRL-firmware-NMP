@@ -33,7 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define ADDRESS (0x53 << 1) // ADXL343 I2C address shifted left by 1 for HAL
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -42,6 +42,7 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
 
@@ -50,6 +51,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -96,8 +98,29 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
+  MX_I2C1_Init();
+  HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, ADDRESS, 0x2D, I2C_MEMADD_SIZE_8BIT, (uint8_t[]){0x08}, 1, 100);
+  if(status == HAL_OK)
+  {
+    uint8_t values[6];
+    HAL_StatusTypeDef read = HAL_I2C_Mem_Read(&hi2c1, ADDRESS, 0x32, I2C_MEMADD_SIZE_8BIT, values, 6, 100);
+    if(read == HAL_OK)
+    {
+      int16_t x = (int16_t)(values[1] << 8 | values[0]); //Shifts by 8 << 8 makes sxomething like 00000000 00010010 into 00010010 00000000, 
+      int16_t y = (int16_t)(values[3] << 8 | values[2]); // | combines the bits together so you dont have to do it manually, so 00010010 00000000 | 00000000 00001111 = 00010010 00001111
+      int16_t z = (int16_t)(values[5] << 8 | values[4]);
+      printf("X: %d, Y: %d, Z: %d\n", x, y, z);
+    }
+    else
+    {
+      printf("Failed to read from ADXL343!\n");
+      
+    }
+  }
+  //
   /* USER CODE BEGIN 2 */
-
+  
+ 
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -108,7 +131,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     //HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    if(Hal_GPIO_ReadPin(button_GPIO_Port, button_Pin) == GPIO_PIN_SET)
+    if(HAL_GPIO_ReadPin(button_GPIO_Port, button_Pin) == GPIO_PIN_SET)
     {
       HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
     }
@@ -168,6 +191,40 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)//makes I2C work
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -183,6 +240,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
