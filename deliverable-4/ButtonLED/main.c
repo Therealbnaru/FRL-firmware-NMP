@@ -24,11 +24,28 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "usbd_cdc_if.h"
+#include <stdbool.h>
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+#define CAPACITY 10
+#define USERG 10.0
+typedef struct
+{
+  int16_t x;
+  int16_t y;
+  int16_t z;
+}accel_sample;
 
+typedef struct
+{
+  accel_sample data[CAPACITY];
+  uint8_t head;
+  uint8_t tail;
+  uint8_t count;
+}accel_buffer;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -45,6 +62,16 @@
 I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN PV */
+accel_buffer sensor_buffer = {0};
+accel_buffer print_buffer = {0};
+bool sampleOn = false;
+GPIO_PinState previous = GPIO_PIN_SET;
+GPIO_PinState timedState = GPIO_PIN_SET;
+uint32_t timeLast = 0;
+uint32_t sampleLast = 0;
+uint32_t processingTime = 0;
+uint32_t printTime = 0;
+
 
 /* USER CODE END PV */
 
@@ -66,7 +93,157 @@ int _write(int file, char *ptr, int len)
   }
   return len;
 }
+
+HAL_StatusTypeDef read_accel(accel_sample *sample)
+{
+  uint8_t values[6];
+  HAL_StatusTypeDef read = HAL_I2C_Mem_Read(&hi2c1, ADDRESS, 0x32, I2C_MEMADD_SIZE_8BIT, values, 6, 100);//0x32 is the start its in the documentation for datax, then reads 6 after
+  if(read == HAL_OK)
+  {
+    sample->x = (int16_t)(values[1] << 8 | values[0]);
+    sample->y = (int16_t)(values[3] << 8 | values[2]);
+    sample->z = (int16_t)(values[5] << 8 | values[4]);
+  }
+  return read;
+}
+//Tail points oldest
+//Head points to write to next
+void push(accel_sample sample)
+{
+  if(sensor_buffer.count == CAPACITY)
+  {
+    sensor_buffer.tail =  (sensor_buffer.tail + 1) % CAPACITY; //goes to next oldest entry always
+  }
+  else
+  {
+    sensor_buffer.count++;
+  }
+
+  sensor_buffer.data[sensor_buffer.head] = sample;
+  sensor_buffer.head = (sensor_buffer.head + 1) % CAPACITY;
+}
+
+int pop(accel_sample *sample)
+{
+  if(sensor_buffer.count == 0)
+  {
+    return 0;
+  }
+
+  *sample = sensor_buffer.data[sensor_buffer.tail]; //gets oldest entry from ring buffer
+  sensor_buffer.tail = (sensor_buffer.tail + 1) % CAPACITY; //new oldest
+  sensor_buffer.count--; //-1 from total count
+  return 1;
+}
+
+//print buffer
+void pushPrint(accel_sample sample)
+{
+  if(print_buffer.count == CAPACITY)
+  {
+    print_buffer.tail =  (print_buffer.tail + 1) % CAPACITY; //goes to next oldest entry always
+  }
+  else
+  {
+    print_buffer.count++;
+  }
+
+  print_buffer.data[print_buffer.head] = sample;
+  print_buffer.head = (print_buffer.head + 1) % CAPACITY;
+}
+
+int popPrint(accel_sample *sample)
+{
+  if(print_buffer.count == 0)
+  {
+    return 0;
+  }
+
+  *sample = print_buffer.data[print_buffer.tail]; //gets oldest entry from ring buffer
+  print_buffer.tail = (print_buffer.tail + 1) % CAPACITY; //new oldest
+  print_buffer.count--; //-1 from total count
+  return 1;
+}
+
+void accelEntries(void)
+{
+  accel_sample current;
+  if(pop(&current) == 0)
+  {
+    return;
+  }
+  while(pop(&current) == 1)
+  {
+    pushPrint(current);
+  }
+  //current is now the last entry in the buffer, in otherwords its the most recent entry
+
+  float mag = (current.x/256.0f) * (current.x/256.0f) + (current.y/256.0f) * (current.y/256.0f) + (current.z/256.0f) * (current.z/256.0f);
+  if(sqrtf(mag) > USERG)
+  {
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+  } 
+  else
+  {
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+  }
+  pushPrint(current);
+
+}
+
+void printAccel(void)
+{
+  accel_sample current;
+  if(popPrint(&current) == 0)
+  {
+    return;
+  }
+  while(popPrint(&current) == 1)
+  {
+    
+  }
+
+  float mag = sqrtf((current.x/256.0f) * (current.x/256.0f) + (current.y/256.0f) * (current.y/256.0f) + (current.z/256.0f) * (current.z/256.0f));
+  printf("X: %d, Y: %d, Z: %d, Magnitude: %.2f g\n", current.x, current.y, current.z, mag);
+}
+
+void sample_accel(void)
+{
+  if(sampleOn == false)
+  {
+    return;
+  }
+  accel_sample sample;
+  if(read_accel(&sample) == HAL_OK)
+  {
+    push(sample);
+  }
+}
+
+void button_state(void)
+{
+  GPIO_PinState current = HAL_GPIO_ReadPin(button_GPIO_Port, button_Pin);
+  uint32_t time = HAL_GetTick();
+
+  if(current != previous)
+  {
+    previous = current;
+    timeLast = time;
+  }
+
+  if(current != timedState && time-timeLast >= 50)
+  {
+    timedState = current;
+    if(timedState == GPIO_PIN_RESET)
+    {
+      sampleOn = !sampleOn;
+    }
+  }
+  
+
+}
 /* USER CODE END 0 */
+
 
 /**
   * @brief  The application entry point.
@@ -99,6 +276,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
   MX_I2C1_Init();
+  /*
   HAL_StatusTypeDef status = HAL_I2C_Mem_Write(&hi2c1, ADDRESS, 0x2D, I2C_MEMADD_SIZE_8BIT, (uint8_t[]){0x08}, 1, 100);
   if(status == HAL_OK)
   {
@@ -111,12 +289,22 @@ int main(void)
       int16_t z = (int16_t)(values[5] << 8 | values[4]);
       printf("X: %d, Y: %d, Z: %d\n", x, y, z);
     }
-    else
-    {
-      printf("Failed to read from ADXL343!\n");
-      
-    }
   }
+  */
+  
+   /*
+   accel_sample sample;
+   if(read_accel(&sample) == HAL_OK)
+   {
+      push(sample);
+      printf("X: %d, Y: %d, Z: %d\n", sample.x, sample.y, sample.z);
+
+   }
+   else
+   {
+     printf("Failed to read from ADXL343!\n");
+  }
+  */
   //
   /* USER CODE BEGIN 2 */
   
@@ -131,14 +319,29 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     //HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-    if(HAL_GPIO_ReadPin(button_GPIO_Port, button_Pin) == GPIO_PIN_SET)
+    button_state();
+    uint32_t time = HAL_GetTick();
+    uint32_t interval = time-sampleLast;
+    uint32_t processingInterval = time-processingTime;
+    uint32_t printInterval = time-printTime;
+
+    if(interval >= 100)
     {
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
+      sampleLast = time;
+      sample_accel();
+      
     }
-    else
+    if(processingInterval >= 300)
     {
-      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+      processingTime = time;
+      accelEntries();
     }
+    if(printInterval >= 300)
+    {
+      printTime = time;
+      printAccel();
+    }
+
   }
   /* USER CODE END 3 */
 }
